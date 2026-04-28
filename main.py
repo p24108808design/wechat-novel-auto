@@ -480,7 +480,8 @@ def run():
             log.info(f"✅ 文案和配图已生成，标题：《{title}》，图片: {img_path}")
         else:
             publisher = WechatPublisher()
-            thumb_media_id, _ = publisher.upload_permanent_image(image_bytes)
+            # 使用临时图片上传（无需 IP 白名单），返回的 media_id 可直接作为 thumb_media_id
+            thumb_media_id = publisher.upload_image(image_bytes)
             draft_id = publisher.create_draft(title, body_html, thumb_media_id)
 
             log.info("=" * 50)
