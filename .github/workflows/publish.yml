@@ -1,0 +1,56 @@
+name: 微信公众号每日小说自动发布
+
+on:
+  schedule:
+    - cron: "50 23 * * *"  # 每天 UTC 23:50 = 北京时间 07:50
+  workflow_dispatch:       # 支持手动触发
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 运行发布脚本
+        env:
+          WECHAT_APP_ID: ${{ secrets.WECHAT_APP_ID }}
+          WECHAT_APP_SECRET: ${{ secrets.WECHAT_APP_SECRET }}
+          HUNYUAN_API_KEY: ${{ secrets.HUNYUAN_API_KEY }}
+          HUNYUAN_API_BASE: ${{ secrets.HUNYUAN_API_BASE }}
+          HUNYUAN_SECRET_ID: ${{ secrets.HUNYUAN_SECRET_ID }}
+          HUNYUAN_SECRET_KEY: ${{ secrets.HUNYUAN_SECRET_KEY }}
+          HUNYUAN_REGION: ${{ secrets.HUNYUAN_REGION }}
+          GITHUB_ACTIONS: "true"
+        run: python main.py
+
+      - name: 上传发布日志
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: publish-log
+          path: publish_log.txt
+          retention-days: 30
+
+      - name: 上传封面图片
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cover-image
+          path: images/cover.jpg
+          retention-days: 7
+
+      - name: 输出关键信息
+        if: always()
+        run: |
+          echo "article_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          echo "run_id=${{ github.run_id }}" >> $GITHUB_OUTPUT
